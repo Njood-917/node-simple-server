@@ -1,179 +1,86 @@
 // @ts-nocheck
-// const http = require("http");
-// const PORT = '8080'
+import http from "http";
+import {parse} from 'querystring'
+import fs from "fs/promises";
 
-// http
-//   .createServer((req, res) => {
-//     /* handle http requests */
-//   })
-//   .listen(PORT);
-
-// console.log(`Server running at http://127.0.0.1:${PORT}/`);
-// import { writeFile } from 'fs';
-// import http from 'http';
-
-// const port = 8008;
+const port = 3002;
 
 
-// let products = [
-//   { id: "1", title: "apple", price: 500 },
-//   { id: "2", title: "samsung", price: 600 },
-// ];
-
-// const server = http.createServer((req, res) => {
-//   // set
-//   res.setHeader('Access-Control-Allow-Origin', '*');
-
-//   if (req.url === '/' && req.method === 'GET') {
-//     res.writeHead(200, { 'Content-Type': 'text/html' });
-//     res.write("Hello, World!");
-//     res.end();
-//   }
-
-//   if (req.url === '/products' && req.method === 'GET') {
-//     try {
-//       res.writeHead(200, { 'Content-Type': 'application/json' });
-//       res.write(JSON.stringify(products));
-//       res.end();
-//     } catch (error) {
-//       res.writeHead(500, { 'Content-Type': 'text/plain' });
-//       res.write('server error');
-//       res.end();
-//     }
-//   }
-//   if (req.url === '/products' && req.method === 'POST') {
-//     let body = '';
-
-//     // Handling data chunks
-//     req.on('data', (chunk) => {
-//       body += chunk;
-//     });
-
-//     // Handling end of data
-//     req.on('end', () => {
-//       try {
-//         // Parse the incoming JSON data
-//         const newProduct = JSON.parse(body);
-//         products.push(newProduct);
-
-//         // Write the updated data to product.json
-//         writeFile('product.json', JSON.stringify(products, null, 2), (error) => {
-//           if (error) {
-//             console.log('something went wrong', error);
-//             res.writeHead(500, { 'Content-Type': 'text/plain' });
-//             res.write('server error');
-//             res.end();
-//             return;
-//           }
-
-//           console.log('data written successfully');
-          
-//           // Respond with the updated products
-//           res.writeHead(200, { 'Content-Type': 'application/json' });
-//           res.write(JSON.stringify(products));
-//           res.end();
-//         });
-//       } catch (error) {
-//         res.writeHead(500, { 'Content-Type': 'text/plain' });
-//         res.write('server error');
-//         res.end();
-//       }
-//     });
-//   }
-// });
-
-// server.listen(port, () => {
-//   console.log(`server is running at http://localhost:${port}`);
-// });
-//   }
-//   if (req.url === '/products' && req.method === 'POST')
-//   writeFile('product.json' , JSON.stringify(products , null))
-// if (error){
-//   console.log('somthing error' , error)
-//   return ;
-// }
-// console.log('data written sucessfully')
-// });
-// ;
-// server.listen(port, () => 
-//   console.log(`recevied POST request data`));
- 
-
-// console.log(`server is running at http://localhost:${port}`);
-import { writeFile } from 'fs';
-import http from 'http';
-
-const port = 8008;
-
-let products = [
-  { id: "1", title: "apple", price: 500 },
-  { id: "2", title: "samsung", price: 600 },
-];
-
-const server = http.createServer((req, res) => {
-  // set CORS headers
-  res.setHeader('Access-Control-Allow-Origin', '*');
-
-  if (req.url === '/' && req.method === 'GET') {
-    res.writeHead(200, { 'Content-Type': 'text/html' });
-    res.write("Hello, World!");
-    res.end();
-  }
-
-  if (req.url === '/products' && req.method === 'GET') {
+const errorResponse = (res, statusCode, message) => {
+  res.writeHead(statusCode, { "Content-Type": "appliction/json" });
+  res.end(
+    JSON.stringify({
+      message: message,
+    })
+  );
+};
+const successResponse = (res, statusCode, message, payload = {}) => {
+  res.writeHead(statusCode, { "Content-Type": "application/json" });
+  res.end(
+    JSON.stringify({
+      message: message,
+      payload: payload,
+    })
+  );
+};
+const server = http.createServer(async(req, res) => {
+  if (req.url === "/" && req.method === "GET") {
     try {
-      res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.write(JSON.stringify(products));
-      res.end();
+      successResponse(res, 200, "hello world");
     } catch (error) {
-      res.writeHead(500, { 'Content-Type': 'text/plain' });
-      res.write('server error');
-      res.end();
+      errorResponse(res, 500, error.message);
+    }
+  } else if (req.url === "/products" && req.method === "GET") {
+    try {
+      const products = JSON.parse(await fs.readFile("products.json", "utf-8")) // convert it to utf-8 to understand the data
+
+      successResponse(res, 200, "return all products", products);
+    } catch (error) {
+      errorResponse(res, 500, error.message);
     }
   }
+  else if (String(req.url).match(/\/products\/([0-9]+)/) && req.method === "GET") {
+    try {
+        const id = parseInt(req.url?.split('/')[2]); // Convert id to number
+        const product = products.find((product) => product.id == id); // Use loose equality
 
-  if (req.url === '/products' && req.method === 'POST') {
-    let body = '';
-
-    // Handling data chunks
-    req.on('data', (chunk) => {
-      body += chunk;
-    });
-
-    // Handling end of data
-    req.on('end', () => {
-      try {
-        // Parse the incoming JSON data
-        const newProduct = JSON.parse(body);
-        products.push(newProduct);
-
-        // Write the updated data to product.json
-        writeFile('product.json', JSON.stringify(products, null, 2), (error) => {
-          if (error) {
-            console.log('something went wrong', error);
-            res.writeHead(500, { 'Content-Type': 'text/plain' });
-            res.write('server error');
-            res.end();
-            return;
-          }
-
-          console.log('data written successfully');
-          
-          // Respond with the updated products
-          res.writeHead(200, { 'Content-Type': 'application/json' });
-          res.write(JSON.stringify(products));
-          res.end();
+        successResponse(res, 200, "return a single product", product);
+    } catch (error) {
+        errorResponse(res, 500, error.message);
+    }
+}
+else if (req.url === "/products" && req.method === "POST") {
+    try {
+        let body = "" ; // string 
+        req.on('data', (chunk)=>{
+            body = body + chunk;
+            console.log(body)
         });
-      } catch (error) {
-        console.log('parsing error', error);
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.write('server error');
-        res.end();
-      }
-    });
+        req.on('end',async()=>{
+            const data = parse(body)
+            console.log(data)
+            // inside data title , price 
+            const newProduct = {
+                id: new Date().getTime().toString(),
+                title: String(data.title),
+                price: Number(data.price),
+            };
+           //get excisting products from the file 
+           const exicitingProducts = JSON.parse(await fs.readFile("products.json","utf-8"))
+           // add the new product to the excisting product
+           exicitingProducts.push(newProduct)
+           //write the file 
+           await fs.writeFile("products.json", JSON.stringify(exicitingProducts))
+
+            
+        });
+       
+      successResponse(res, 200, "new product is created");
+    } catch (error) {
+      errorResponse(res, 500, error.message);
+    }
   }
 });
-
 server.listen(port, () => {
-  console.log(`server is running at http://localhost:${port}`);
+  console.log(`server is running at http://localhost:${port} `);
 });
