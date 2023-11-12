@@ -1,8 +1,6 @@
 import {Express }from "express";
 import  {Router}  from "express";// import router just from express
 import { getAllProducts , getSingleProduct, deletProduct, addProduct,updateProduct } from "../controllers/productsController";
-// import Request from 'express';
-// import Response from 'express';
 const productsRouter = Router() ; // to handle my router
 
 productsRouter.get('/products',getAllProducts)

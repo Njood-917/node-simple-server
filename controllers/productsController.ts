@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-// import fs from "fs/promises"
+import fs from "fs/promises"
 import { promises as fsPromises } from 'fs';
 interface Product {
   id: string;
@@ -7,15 +7,12 @@ interface Product {
   price: number;
 }
 
-let products: Product[]  = [
-  { id: "1", title: "product1", price: 500 },
-  { id: "2", title: "product2", price: 600 }
-];
 
 export const getAllProducts = async(req:Request, res:Response) => {
   const products: Product[] = JSON.parse(await fsPromises.readFile("products.json", "utf-8"));
+  
 
-    console.log(products)
+    // console.log(products)
   res.status(200).send({
     success: true,
     message: "all products are returned",
@@ -51,26 +48,9 @@ export const getSingleProduct = async (req: Request, res: Response) => {
   }
 };
 
-
-// export const getSingleProduct = (req:Request, res:Response) => {
-//   const id:string  = req.params.id;
-//   const product:Product | undefined  = products.find((product) => product.id === id);
-//   if (!product) {
-//     res.status(404).send({
-//       success: false,
-//       message: "product not found",
-//     });
-//     // return;
-//   }
-//   res.status(200).send({
-//     success: true,
-//     message: `single product is returned`,
-//     payload: product,
-//   });
-// };
-
-export const deletProduct = (req:Request, res:Response) => {
+export const deletProduct = async (req:Request, res:Response) => {
   const id: String   = req.params.id;
+  let products: Product[] = JSON.parse(await fsPromises.readFile("products.json", "utf-8"));
   const product:Product | undefined = products.find((product) => product.id === id);
   if (!product) {
     res.status(404).send({
@@ -88,21 +68,24 @@ export const deletProduct = (req:Request, res:Response) => {
   });
 };
 
-export const addProduct =(req: Request, res: Response) => {
+export const addProduct =async (req: Request, res: Response) => {
+  const products: Product[] = JSON.parse(await fsPromises.readFile("products.json", "utf-8"));
     console.log(req.body)
     const newProduct:Product = {
         id:new Date().getTime().toString(),
         title: req.body.title,
-        price: req.body.price,
+        price: Number(req.body.price),
     };
     products.push(newProduct)
+    await fs.writeFile("products.json", JSON.stringify(products));
     res.status(201).send({
       success: true,
       message: "add product ",
     });
   };
-  export const updateProduct = (req: Request, res:Response) => {
+  export const updateProduct = async (req: Request, res:Response) => {
     const id:string  = req.params.id;
+    const products: Product[] = JSON.parse(await fsPromises.readFile("products.json", "utf-8"));
     const index: number  = products.findIndex((product)=> product.id === id)//find the product that i want update it
     if (index === -1){
         res.status(404).send({
